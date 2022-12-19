@@ -1,14 +1,51 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
-    <head>
-        <title>BugBeat</title>
-    </head>
+  <head>
+    <title>BugBeat</title>
+  </head>
 
+  <body>
+    <h1>BugBeat</h1>
 
-    <body>
-		<h1>Hello World!</h1>
-    </body>
+    <h2>Want to read</h2>
+    <ul>
+      {% for book in readlist_books %}
+      <li>
+        {{book.book_name}}
+        <form action="read/" method="POST">
+          {% csrf_token %}
+          <input name="book_id" value="{{book.id}}" type="hidden" />
+          <button type="submit">Read</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
 
+    <h2>Read</h2>
+    <ul>
+      {% for book in read_books %}
+      <li>
+        {{book.book_name}}
+        <form action="unread/" method="POST">
+          {% csrf_token %}
+          <input name="book_id" value="{{book.id}}" type="hidden" />
+          <button type="submit">Not read</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
 
-    </body>
+    <form action="add/" method="POST">
+      <!-- FLAW 2: now CSRF token used with the form
+      Fix: uncomment the row below and apply the fix in views.py row 21 -->
+      <!-- {% csrf_token %} -->
+      <input placeholder="Add a book..." name="book_name" />
+      <button type="submit">Add</button>
+    </form>
+
+    <form action="logout/" method="POST">
+      {% csrf_token %}
+      <input type="submit" value="Logout" />
+    </form>
+  </body>
 </html>
