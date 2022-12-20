@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 
+import sqlite3
+
 from .models import Book
 from .forms import UserForm
 
@@ -58,10 +60,21 @@ def set_book_read(request, read):
         return redirect("/")
 
 @login_required
+def search(request):
+    if request.method == "GET":
+        conn = sqlite3.connect("db.sqlite3")
+        cursor = conn.cursor()
+        # FLAW 1: SQL injection
+        # For example with query "' and 1==0 UNION SELECT 0, username || " " || password, 0 FROM auth_user;--" you can see other users and their passwords
+        response = cursor.execute("SELECT id, book_name, read FROM cbs_project_book WHERE reader_id='%s' AND book_name LIKE '%%%s%%'" % (request.user.id, request.GET.get("searched_book"))).fetchall()
+        readlist_books = [Book(id=x[0], book_name=x[1]) for x in filter(lambda x: x[2] == False, response)]
+        read_books = [Book(id=x[0], book_name=x[1]) for x in filter(lambda x: x[2] == True, response)]
+
+        return render(request, "pages/index.html", {"readlist_books": readlist_books, "read_books": read_books})
+
+@login_required
 def index(request):
     readlist_books = request.user.book_set.exclude(read=True)
     read_books = request.user.book_set.exclude(read=False)
-    print(readlist_books)
-    print(read_books)
 
     return render(request, "pages/index.html", {"readlist_books": readlist_books, "read_books": read_books})
