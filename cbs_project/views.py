@@ -1,6 +1,9 @@
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
+# FLAW 5: Broken authentication
+# Fix: Uncomment the line below
+# from django.contrib.auth.password_validation import validate_password
 
 import sqlite3
 
@@ -12,6 +15,10 @@ def register(request):
         user_form = UserForm(data=request.POST)
         if user_form.is_valid():
             user = user_form.save()
+            # FLAW 5: Broken authentication
+            # Fix: Uncomment the lines below
+            # if validate_password(user.password) is not None:
+            #     return redirect("/login")
             user.set_password(user.password)
             user.save()
         else:
@@ -19,8 +26,8 @@ def register(request):
     return redirect("/login")
     
 @login_required
-# FLAW 2: CSRF exempted
-# Fix: remove the row below and apply the fix in index.html row 41
+# FLAW 2: CSRF
+# Fix: remove the row below and apply the fix in index.html row 46
 @csrf_exempt
 def add_book(request):
     if request.method == "POST":
@@ -48,9 +55,7 @@ def set_book_read(request, read):
         book = Book.objects.get(pk=book_id)
 
         # FLAW 4: Broken access control: 
-        # no check whether the user is the book's reader
-        #
-        # Fix:
+        # Fix: check that the current user is the reader
         # if book.reader != request.user:
         #     return redirect("/")
 
@@ -65,8 +70,15 @@ def search(request):
         conn = sqlite3.connect("db.sqlite3")
         cursor = conn.cursor()
         # FLAW 1: SQL injection
-        # For example with query "' and 1==0 UNION SELECT 0, username || " " || password, 0 FROM auth_user;--" you can see other users and their passwords
+        # Fix 1: use a parameterized query
+        # response = cursor.execute("SELECT id, book_name, read FROM cbs_project_book WHERE reader_id=? AND book_name LIKE ?", (request.user.id, "%"+request.GET.get("searched_book")+"%")).fetchall()
+        # Fix 2: use the model's filter function. Lines 72 and 73 could be removed in this case.
+        # books = Book.objects.filter(book_name__contains=request.GET.get("searched_book"))
         response = cursor.execute("SELECT id, book_name, read FROM cbs_project_book WHERE reader_id='%s' AND book_name LIKE '%%%s%%'" % (request.user.id, request.GET.get("searched_book"))).fetchall()
+        
+        # Fix 2: additionally, use these uncommented lines instead of the ones below them.
+        # readlist_books = [Book(id=x.id, book_name=x.book_name) for x in filter(lambda x: x.read == False, books)]
+        # read_books = [Book(id=x.id, book_name=x.book_name) for x in filter(lambda x: x.read == True, books)]
         readlist_books = [Book(id=x[0], book_name=x[1]) for x in filter(lambda x: x[2] == False, response)]
         read_books = [Book(id=x[0], book_name=x[1]) for x in filter(lambda x: x[2] == True, response)]
 

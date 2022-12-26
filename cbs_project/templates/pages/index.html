@@ -15,8 +15,10 @@
     <h2>Want to read</h2>
     <ul>
       {% for book in readlist_books %}
-      <li>
-        {{book.book_name}}
+      <li value="">
+        <!-- FLAW 3: Cross-Site Scripting -->
+        <!-- Fix: remove the "safe" keyword -->
+        {{book.book_name | safe}}
         <form action="/read/" method="POST">
           {% csrf_token %}
           <input name="book_id" value="{{book.id}}" type="hidden" />
@@ -41,8 +43,8 @@
     </ul>
 
     <form action="/add/" method="POST">
-      <!-- FLAW 2: now CSRF token used with the form
-      Fix: uncomment the row below and apply the fix in views.py row 21 -->
+      <!-- FLAW 2: CSRF
+      Fix: uncomment the row below and apply the fix in views.py row 29 -->
       <!-- {% csrf_token %} -->
       <input placeholder="Add a book..." name="book_name" />
       <button type="submit">Add</button>
