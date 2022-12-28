@@ -1,3 +1,5 @@
+# Cyber Security Base Project I 2022
+
 ## Installation
 
 After cloning the repository, you should be able to install all the required dependencies by running “pip3 install -r requirements.txt” in the project’s root directory. You can also set up a virtual environment and install the dependencies there if you’d like (instructions here: https://docs.python.org/3/library/venv.html). The project only requires Django as an external dependency.
